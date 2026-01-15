@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HexBeGone</title>
+    <style>
+        body {
+            background-color: #FFFFFF;
+        }
+    	.canvas-container {
+			display: flex;
+  			justify-content: center;
+  			align-items: center;
+
+        }
+        canvas {
+            border: 1px solid #000000;
+        }
+        a, p {	
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+    <audio id="win">
+        <source src="https://noproblo.dayjo.org/zeldasounds/LOZ/LOZ_Get_Heart.wav" type="audio/wav">
+    </audio>
+    <audio id="lose">
+        <source src="https://noproblo.dayjo.org/zeldasounds/LOZ/LOZFDS_Link_Die.wav" type="audio/wav">
+    </audio>
+</head>
+<body>
+	<div class="canvas-container">
+    <canvas id="myCanvas" width="400" height="400"></canvas>
+    </div>
+    <script>
+        function convertToPos(number) {
+            if (number < 0) {
+                return ((2 * Math.PI) + number);
+            } else {
+                return (number);
+            }
+        }
+
+        function checkCollision(angleA, angleB) {
+            const angleBEnd = angleB + hexSlice;
+            let angle1 = convertToPos(angleA);
+            if ((angleBEnd > (2 * Math.PI) && (angle1 < angleB))) {
+                angle1 += (2 * Math.PI);
+            }
+            //console.log(angleBEnd, angle1, hexAngle, ((angleBEnd >= angle1) && (angle1 >= hexAngle)))
+            return ((angleBEnd >= angle1) && (angle1 >= hexAngle));
+        }
+
+        function drawHex(ctx, radius, angle) {
+            ctx.strokeStyle = hexColor;
+            ctx.beginPath();
+            for (let i = 1; i < 7; i++) {
+                const currentAngle = angle + (i * hexSlice);
+                ctx.lineTo(centerX + radius * Math.cos(currentAngle), centerY + radius * Math.sin(currentAngle));
+                if (i == 6) {
+                    ctx.moveTo(centerX + radius * Math.cos(currentAngle), centerY + radius * Math.sin(currentAngle));
+                }
+            }
+            ctx.closePath();
+            ctx.stroke();
+        }
+
+        function drawLine(ctx, angle) {
+            const endX = centerX + 30 * Math.cos(angle);
+            const endY = centerY + 30 * Math.sin(angle);
+            ctx.strokeStyle = "black";
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(endX, endY);
+            ctx.closePath();
+            ctx.stroke();
+        }
+
+        
+        var audioWin = document.getElementById("win");
+        var audioLose = document.getElementById("lose");
+        const canvas = document.getElementById('myCanvas');
+        const myElement = canvas.getBoundingClientRect();
+        const ctx = canvas.getContext('2d');
+        const centerX = Math.floor(canvas.width / 2);
+        const centerY = Math.floor(canvas.height / 2);
+        const hexSlice = (2 * Math.PI) / 6;
+        let intervalId = 0;
+        let started = false;
+        let lastAngle = 0;
+        let hexSize = 350;
+        let hexAngle = 0;
+        let hexColor = "black";
+        let speed = 1;
+        let score = 0;
+
+        ctx.font = "bold 20px Arial";
+        ctx.lineWidth = 5;
+
+
+        function startGame() {
+            lastAngle = 0;
+            hexSize = 350;
+            hexAngle = 0;
+            hexColor = "black";
+            speed = 1;
+            score = 0;
+            intervalId = setInterval(mainLoop, 1000 / 60);
+        }
+        document.addEventListener("click", function(event) {
+            if (started == false) {
+                started = true;
+                startGame()
+            }
+        });
+
+        document.addEventListener('mousemove', function(event) {
+        if (hexColor != "red") {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            lastAngle = Math.atan2(y - centerY, x - centerX);
+        }
+        });
+        
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawLine(ctx, lastAngle);
+            drawHex(ctx, hexSize, hexAngle);
+            ctx.fillStyle = hexColor;
+            ctx.fillText(("score: " + score), 10, 20);
+            if (started == false) {
+                ctx.fillText("Click to Restart", centerX-60, centerY-40);
+            }
+        }
+
+        function mainLoop() {
+            hexSize -= speed;
+            if ((hexSize <= 30) && (hexColor == "black")) {
+                if (checkCollision(lastAngle, hexAngle)) {
+                    audioWin.play();
+                    score ++;
+                    speed += 0.5;
+                    hexColor = "green";
+                }
+                else {
+                    audioLose.play();
+                    speed = 0;
+                    hexColor = "red";
+                    started = false;
+                    clearInterval(intervalId);
+                }
+            } else if (hexSize <= 0) {
+                hexColor = "black";
+                hexSize = 350;
+                hexAngle = Math.random() * 2 * Math.PI;
+            }
+            update();
+        }
+        ctx.fillText("Click Anywhere to Start", centerX-110, centerY);
+    </script><br>
+    <p>Use your mouse to point the line towards the opening.</p>
+    <a href="/">Go back home</a>
+</body>
+</html>

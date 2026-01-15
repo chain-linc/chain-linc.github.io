@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SnakeBeDodging</title>
+        <style>
+            body {
+                background-color: #FFFFFF;
+            }
+            .canvas-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+            }
+            canvas {
+                border: 1px solid #000000;
+            }
+            a, p {	
+                display: flex;
+                justify-content: center;
+            }
+        </style>
+        <audio id="win">
+            <source src="https://noproblo.dayjo.org/zeldasounds/LOZ/LOZ_Get_Heart.wav" type="audio/wav">
+        </audio>
+        <audio id="lose">
+            <source src="https://noproblo.dayjo.org/zeldasounds/LOZ/LOZFDS_Bomb_Blow.wav" type="audio/wav">
+        </audio>
+    </head>
+    <body>
+        <div class="canvas-container">
+        <canvas id="myCanvas" width="400" height="400"></canvas>
+        </div>
+        <script>
+            var audioWin = document.getElementById("win");
+            var audioLose = document.getElementById("lose");
+            const canvas = document.getElementById('myCanvas');
+            const myElement = canvas.getBoundingClientRect();
+            const ctx = canvas.getContext('2d');
+            const centerX = Math.floor(canvas.width / 2);
+            const centerY = Math.floor(canvas.height / 2);
+            let intervalId = null;
+            let started = false;
+            let speed = 0.5;
+            let score = 0;
+            let asteroids = [];
+            let asteroidColor = "grey";
+            let snakeColor = "green";
+            let snakeLength = 0;
+            let spacePressed = false;
+
+            ctx.font = "bold 20px Arial";
+            ctx.lineWidth = 5;
+
+            function randint(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
+            function addPoints() {
+                score += ((snakeLength/4) ** 1.1) / 20;
+                speed += 0.002;
+                for (let i = 0; i < 5; i++) {
+                    asteroids[i][0] -= 10;
+                }
+            }
+
+            function drawSnake() {
+                ctx.strokeStyle = snakeColor;
+                ctx.beginPath();
+                ctx.moveTo(25, 395);
+                ctx.lineTo(snakeLength, 395);
+                ctx.closePath();
+                ctx.stroke();
+            }
+
+            function drawAsteroids() {
+                ctx.fillStyle = asteroidColor;
+                for (let i = 0; i < 5; i++) {
+                    ctx.fillRect(asteroids[i][0], asteroids[i][1]-20, 20, 20);
+                }
+            }
+
+            function startGame() {
+                asteroids = [[400, 400, 0, 10], [400, 400, 0, 10], [400, 400, 0, 10], [400, 400, 0, 10], [400, 400, 0, 10]];
+                speed = 0.5;
+                score = 0;
+                snakeLength = 40;
+                snakeColor = "green"
+                intervalId = setInterval(mainLoop, 1000 / 60);
+            }
+
+            document.addEventListener('keydown', function(event) {
+                if (event.key === " ") {
+                    if ((started == false) && spacePressed == false) {
+                        started = true;
+                        startGame()
+                    }
+                    spacePressed = true;
+                }
+            });
+
+            document.addEventListener('keyup', function(event) {
+                if (event.key === " ") {
+                    spacePressed = false;
+                    if (started) {
+                        audioWin.play();
+                    }
+                }
+            });
+            
+            function update() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawSnake();
+                drawAsteroids();
+                ctx.fillStyle = "black";
+                ctx.fillText(("score: " + Math.floor(score)), 10, 20);
+                if (started == false) {
+                    ctx.fillStyle = "red";
+                    ctx.fillText("Press Space to Restart", centerX-110, centerY);
+                }
+            }
+
+            function mainLoop() {
+                if (spacePressed && (snakeLength < 375)) {
+                    snakeLength += 5;
+                } else if ((!spacePressed) && snakeLength > 40) {
+                    snakeLength -= 10;
+                    if (snakeLength < 40) {
+                        snakeLength = 40;
+                    }
+                    addPoints();
+                }
+                for (let i = 0; i < 5; i++) {
+                    asteroids[i][1] += asteroids[i][3];
+                    asteroids[i][0] += asteroids[i][2];
+                    if (asteroids[i][1] >= 395) {
+                        if ((snakeLength > asteroids[i][0]) && (25 < asteroids[i][0]+20)) {
+                            audioLose.play();
+                            snakeColor = "red";
+                            started = false;
+                            clearInterval(intervalId);
+                        }
+                    }
+                    if (asteroids[i][1] >= 412) {
+                        asteroids[i][0] = randint(-50, 700);
+                        asteroids[i][1] = 0 - randint(0, 30);
+                        asteroids[i][2] = 3 - randint(0, 6);
+                        asteroids[i][3] = randint(3, 6)*speed;
+                    }
+                }
+                update();
+            }
+            ctx.fillText("Press the Space Key to Start", centerX-130, centerY);
+        </script><br>
+        <p>Press Space to extend the snake. But don't let the asteroids hit you!</p>
+        <p>Tip: the Longer you extend the more points you get by the foot</p>
+        <a href="/">Go back home</a>
+    </body>
+</html>
